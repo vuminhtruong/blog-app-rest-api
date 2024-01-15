@@ -5,6 +5,10 @@ import com.truongvu.blogrestapi.entity.Post;
 import com.truongvu.blogrestapi.exception.ResourceNotFoundException;
 import com.truongvu.blogrestapi.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,8 +27,11 @@ public class PostServiceImp implements PostService{
     }
 
     @Override
-    public List<PostDTO> getAllPosts() {
-        List<Post> listPost = postRepository.findAll();
+    public List<PostDTO> getAllPosts(int pageNo,int pageSize,String sortBy) {
+        Pageable pageable = PageRequest.of(pageNo,pageSize, Sort.by(sortBy));
+        Page<Post> page = postRepository.findAll(pageable);
+
+        List<Post> listPost = page.getContent();
 
         return listPost.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
