@@ -2,6 +2,7 @@ package com.truongvu.blogrestapi.controller;
 
 import com.truongvu.blogrestapi.dto.CommentDTO;
 import com.truongvu.blogrestapi.service.CommentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,7 @@ public class CommentController {
     private final CommentService commentService;
 
     @PostMapping("/posts/{postId}/comments")
-    public ResponseEntity<CommentDTO> createComment(@PathVariable(name = "postId") long postId, @RequestBody CommentDTO commentDTO) {
+    public ResponseEntity<CommentDTO> createComment(@Valid @PathVariable(name = "postId") long postId, @RequestBody CommentDTO commentDTO) {
         return new ResponseEntity<>(commentService.createComment(postId,commentDTO), HttpStatus.CREATED);
     }
 
