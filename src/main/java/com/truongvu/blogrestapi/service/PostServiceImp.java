@@ -5,6 +5,7 @@ import com.truongvu.blogrestapi.entity.Post;
 import com.truongvu.blogrestapi.exception.ResourceNotFoundException;
 import com.truongvu.blogrestapi.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostServiceImp implements PostService{
     private final PostRepository postRepository;
+    private final ModelMapper modelMapper;
+
     @Override
     public PostDTO createPost(PostDTO postDTO) {
         Post post = mapToEntity(postDTO);
@@ -63,22 +66,10 @@ public class PostServiceImp implements PostService{
     }
 
     private PostDTO mapToDTO(Post post) {
-        PostDTO postDTO = new PostDTO();
-        postDTO.setId(post.getId());
-        postDTO.setTitle(post.getTitle());
-        postDTO.setDescription(post.getDescription());
-        postDTO.setContent(post.getContent());
-
-        return postDTO;
+        return modelMapper.map(post,PostDTO.class);
     }
 
     private Post mapToEntity(PostDTO postDTO) {
-        Post post = new Post();
-        post.setId(postDTO.getId());
-        post.setTitle(postDTO.getTitle());
-        post.setDescription(postDTO.getDescription());
-        post.setContent(postDTO.getContent());
-
-        return post;
+        return modelMapper.map(postDTO,Post.class);
     }
 }
