@@ -8,6 +8,7 @@ import com.truongvu.blogrestapi.exception.BlogAPIException;
 import com.truongvu.blogrestapi.exception.ResourceNotFoundException;
 import com.truongvu.blogrestapi.repository.RoleRepository;
 import com.truongvu.blogrestapi.repository.UserRepository;
+import com.truongvu.blogrestapi.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,6 +28,8 @@ public class AuthServiceImp implements AuthService{
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final JwtTokenProvider jwtTokenProvider;
+
     private final static PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Override
@@ -37,7 +40,9 @@ public class AuthServiceImp implements AuthService{
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        return "User logged-in successfully";
+        String token = jwtTokenProvider.generateToken(authentication);
+
+        return token;
     }
 
     @Override

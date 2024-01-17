@@ -1,5 +1,6 @@
 package com.truongvu.blogrestapi.controller;
 
+import com.truongvu.blogrestapi.dto.JwtAuthResponse;
 import com.truongvu.blogrestapi.dto.LoginDTO;
 import com.truongvu.blogrestapi.dto.RegisterDTO;
 import com.truongvu.blogrestapi.service.AuthService;
@@ -18,8 +19,13 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginDTO loginDTO) {
-        return new ResponseEntity<>(authService.login(loginDTO), HttpStatus.OK);
+    public ResponseEntity<JwtAuthResponse> login(@RequestBody LoginDTO loginDTO) {
+        String token = authService.login(loginDTO);
+
+        JwtAuthResponse jwtAuthResponse = new JwtAuthResponse();
+        jwtAuthResponse.setAccessToken(token);
+
+        return new ResponseEntity<>(jwtAuthResponse, HttpStatus.OK);
     }
 
     @PostMapping("/register")
