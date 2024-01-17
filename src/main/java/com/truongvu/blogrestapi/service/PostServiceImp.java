@@ -1,8 +1,10 @@
 package com.truongvu.blogrestapi.service;
 
 import com.truongvu.blogrestapi.dto.PostDTO;
+import com.truongvu.blogrestapi.entity.Category;
 import com.truongvu.blogrestapi.entity.Post;
 import com.truongvu.blogrestapi.exception.ResourceNotFoundException;
+import com.truongvu.blogrestapi.repository.CategoryRepository;
 import com.truongvu.blogrestapi.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -19,11 +21,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostServiceImp implements PostService{
     private final PostRepository postRepository;
+    private final CategoryRepository categoryRepository;
     private final ModelMapper modelMapper;
 
     @Override
     public PostDTO createPost(PostDTO postDTO) {
+        Category category = categoryRepository.findById(postDTO.getCategoryId()).orElseThrow(() -> new ResourceNotFoundException("Category","id",postDTO.getCategoryId()));
+
         Post post = mapToEntity(postDTO);
+        post.setCategory(category);
         Post savedPost = postRepository.save(post);
 
         return mapToDTO(savedPost);
@@ -48,11 +54,13 @@ public class PostServiceImp implements PostService{
 
     @Override
     public PostDTO updatePost(PostDTO newPostDTO, long id) {
+        Category category = categoryRepository.findById(newPostDTO.getCategoryId()).orElseThrow(() -> new ResourceNotFoundException("Category","id", newPostDTO.getCategoryId()));
         Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post","id", id));
 
         post.setTitle(newPostDTO.getTitle());
         post.setDescription(newPostDTO.getDescription());
         post.setContent(newPostDTO.getContent());
+        post.setCategory(category);
 
         Post updatedPost = postRepository.save(post);
 
@@ -63,6 +71,13 @@ public class PostServiceImp implements PostService{
     public void deletePost(Long id) {
         Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post","id",id));
         postRepository.delete(post);
+    }
+
+    @Override
+    public List<PostDTO> getPostsByCategory(long categoryId) {
+        Category category = categoryRepository.findById(categoryId).orElseThrow(() -> new ResourceNotFoundException("Category","id",categoryId));
+        List<Post> posts = postRepository.findByCategoryId(categoryId);
+        return posts.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     private PostDTO mapToDTO(Post post) {

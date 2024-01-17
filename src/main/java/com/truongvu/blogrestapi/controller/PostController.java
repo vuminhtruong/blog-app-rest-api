@@ -52,4 +52,9 @@ public class PostController {
         postService.deletePost(id);
         return new ResponseEntity<>("Post with id= " + id + " deleted successfully",HttpStatus.OK);
     }
+
+    @GetMapping("/category/{id}")
+    public ResponseEntity<List<PostDTO>> getPostsByCategory(@PathVariable("id") long id) {
+        return new ResponseEntity<>(postService.getPostsByCategory(id),HttpStatus.OK);
+    }
 }
