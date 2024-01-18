@@ -1,5 +1,6 @@
 package com.truongvu.blogrestapi.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
 
