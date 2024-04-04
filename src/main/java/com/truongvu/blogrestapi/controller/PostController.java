@@ -20,6 +20,7 @@ import java.util.List;
 @Tag(
         name = "CRUD REST APIs for POST resource"
 )
+@CrossOrigin(origins = "http://localhost:4200")
 public class PostController {
     private final PostService postService;
 
@@ -43,11 +44,16 @@ public class PostController {
     )
     @GetMapping
     public List<PostDTO> getAllPosts(
-            @RequestParam(value = "pageNo",defaultValue = "0",required = false) int pageNo,
-            @RequestParam(value = "pageSize",defaultValue = "5",required = false) int pageSize,
-            @RequestParam(value = "sortBy",defaultValue = "id",required = false) String sortBy
+            @RequestParam(value = "pageNo", defaultValue = "0", required = false) int pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "5", required = false) int pageSize,
+            @RequestParam(value = "sortBy", defaultValue = "id", required = false) String sortBy
     ) {
-        return postService.getAllPosts(pageNo,pageSize,sortBy);
+        return postService.getAllPosts(pageNo, pageSize, sortBy);
+    }
+
+    @GetMapping("/all-post")
+    public List<PostDTO> getAllPostsWithoutPageSize() {
+        return postService.getAllPostsWithoutPageSize();
     }
 
 
@@ -58,7 +64,7 @@ public class PostController {
     @GetMapping("/{id}")
     public ResponseEntity<PostDTO> getPostById(@PathVariable(name = "id") long id) {
 
-        return new ResponseEntity<>(postService.findById(id),HttpStatus.OK);
+        return new ResponseEntity<>(postService.findById(id), HttpStatus.OK);
     }
 
     @Operation(
@@ -70,8 +76,8 @@ public class PostController {
     )
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<PostDTO> updatePost(@Valid @RequestBody PostDTO postDTO,@PathVariable(name = "id") long id) {
-        return new ResponseEntity<>(postService.updatePost(postDTO,id),HttpStatus.OK);
+    public ResponseEntity<PostDTO> updatePost(@Valid @RequestBody PostDTO postDTO, @PathVariable(name = "id") long id) {
+        return new ResponseEntity<>(postService.updatePost(postDTO, id), HttpStatus.OK);
     }
 
     @Operation(
@@ -85,7 +91,7 @@ public class PostController {
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deletePost(@PathVariable(name = "id") long id) {
         postService.deletePost(id);
-        return new ResponseEntity<>("Post with id= " + id + " deleted successfully",HttpStatus.OK);
+        return new ResponseEntity<>("Post with id= " + id + " deleted successfully", HttpStatus.OK);
     }
 
     @Operation(
@@ -93,7 +99,18 @@ public class PostController {
             description = "Get POSTS by CATEGORY REST API is used to get a list of posts by common CATEGORY"
     )
     @GetMapping("/category/{id}")
-    public ResponseEntity<List<PostDTO>> getPostsByCategory(@PathVariable("id") long id) {
-        return new ResponseEntity<>(postService.getPostsByCategory(id),HttpStatus.OK);
+    public ResponseEntity<List<PostDTO>> getAllPostsByCategory(@PathVariable("id") long id) {
+        return new ResponseEntity<>(postService.getPostsByCategory(id), HttpStatus.OK);
     }
+
+    @GetMapping("/category/{id}/filter")
+    public ResponseEntity<List<PostDTO>> getPostsByCategory(
+            @PathVariable("id") long id,
+            @RequestParam(value = "pageNo", defaultValue = "0", required = false) int pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "5", required = false) int pageSize,
+            @RequestParam(value = "sortBy", defaultValue = "id", required = false) String sortBy
+    ) {
+        return new ResponseEntity<>(postService.getPostsByCategoryWithPageSize(id, pageNo, pageSize, sortBy), HttpStatus.OK);
+    }
+
 }

@@ -18,6 +18,6 @@ public class CommentDTO {
     private String email;
 
     @NotNull
-    @Size(min = 10,message = "Body must be minimum 10 characters")
+    @Size(min = 2,message = "Body must be minimum 10 characters")
     private String body;
 }

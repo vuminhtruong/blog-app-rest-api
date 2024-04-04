@@ -5,12 +5,12 @@ import com.truongvu.blogrestapi.dto.RegisterDTO;
 import com.truongvu.blogrestapi.entity.Role;
 import com.truongvu.blogrestapi.entity.User;
 import com.truongvu.blogrestapi.exception.BlogAPIException;
-import com.truongvu.blogrestapi.exception.ResourceNotFoundException;
 import com.truongvu.blogrestapi.repository.RoleRepository;
 import com.truongvu.blogrestapi.repository.UserRepository;
 import com.truongvu.blogrestapi.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -40,9 +40,7 @@ public class AuthServiceImp implements AuthService{
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String token = jwtTokenProvider.generateToken(authentication);
-
-        return token;
+        return jwtTokenProvider.generateToken(authentication);
     }
 
     @Override
@@ -63,7 +61,6 @@ public class AuthServiceImp implements AuthService{
 
         Set<Role> roles = new HashSet<>();
         roles.add(roleRepository.findByRole("ROLE_USER").orElseThrow(() -> new BlogAPIException(HttpStatus.BAD_REQUEST,"Role not found")));
-
         user.setRoles(roles);
         userRepository.save(user);
 

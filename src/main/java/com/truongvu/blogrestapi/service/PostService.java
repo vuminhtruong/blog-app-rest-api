@@ -12,4 +12,7 @@ public interface PostService {
     PostDTO updatePost(PostDTO newPostDTO,long id);
     void deletePost(Long id);
     List<PostDTO> getPostsByCategory(long categoryId);
+
+    List<PostDTO> getAllPostsWithoutPageSize();
+    List<PostDTO> getPostsByCategoryWithPageSize(long categoryId, int pageNo, int pageSize, String sortBy);
 }

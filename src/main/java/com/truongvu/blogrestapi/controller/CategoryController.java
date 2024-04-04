@@ -2,6 +2,7 @@ package com.truongvu.blogrestapi.controller;
 
 import com.truongvu.blogrestapi.dto.CategoryDTO;
 import com.truongvu.blogrestapi.service.CategoryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,12 +14,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class CategoryController {
     private final CategoryService categoryService;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CategoryDTO> createCategory(@RequestBody CategoryDTO categoryDTO) {
+    public ResponseEntity<CategoryDTO> createCategory(@Valid @RequestBody CategoryDTO categoryDTO) {
         return new ResponseEntity<>(categoryService.addCategory(categoryDTO), HttpStatus.CREATED);
     }
 
