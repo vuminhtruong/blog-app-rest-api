@@ -13,10 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -66,7 +63,14 @@ public class ImageServiceImp implements ImageService {
     }
 
     private ImageDTO mapToDTO(Image image) {
-        return modelMapper.map(image, ImageDTO.class);
+        ImageDTO imageDTO = new ImageDTO();
+        imageDTO.setId(image.getId());
+        imageDTO.setName(image.getName());
+        imageDTO.setType(image.getType());
+        imageDTO.setData(Base64.getEncoder().encodeToString(image.getData()));
+        imageDTO.setCreateAt(image.getCreateAt());
+
+        return imageDTO;
     }
 
     private Image mapToEntity(ImageDTO imageDTO) {

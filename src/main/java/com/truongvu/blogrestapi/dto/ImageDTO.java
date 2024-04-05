@@ -12,7 +12,7 @@ public class ImageDTO {
     private String name;
     private String type;
     @NotNull
-    private byte[] data;
+    private String data;
     @NotNull
     private LocalDateTime createAt;
 }
