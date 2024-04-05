@@ -9,6 +9,6 @@ import java.util.List;
 public interface ImageService {
     List<ImageDTO> getAllImage();
     ImageDTO getImage(long id);
-    ImageDTO uploadImage(MultipartFile file) throws IOException;
+    List<ImageDTO> uploadImage(MultipartFile[] file) throws IOException;
     String deleteImage(long id);
 }

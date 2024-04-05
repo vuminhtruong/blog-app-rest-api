@@ -13,6 +13,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
+
+
 @RestController
 @RequestMapping("/api/images")
 @RequiredArgsConstructor
@@ -30,9 +33,9 @@ public class ImageController {
         return new ResponseEntity<>(imageService.getImage(id), HttpStatus.OK);
     }
 
-    @PostMapping
-    public ResponseEntity<ImageDTO> uploadImage(@ModelAttribute("file") MultipartFile file) throws IOException {
-        return new ResponseEntity<>(imageService.uploadImage(file), HttpStatus.CREATED);
+    @PostMapping()
+    public ResponseEntity<List<ImageDTO>> uploadImage(@RequestParam("files") MultipartFile[] files) throws IOException {
+        return new ResponseEntity<>(imageService.uploadImage(files), HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")

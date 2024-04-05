@@ -13,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -36,17 +38,24 @@ public class ImageServiceImp implements ImageService {
     }
 
     @Override
-    public ImageDTO uploadImage(MultipartFile file) throws IOException {
+    public List<ImageDTO> uploadImage(MultipartFile[] files) throws IOException {
+        List<ImageDTO> imageDTOList = new ArrayList<>();
         try {
-            validateFile.validateFile(file);
+            for(MultipartFile file : files) {
+                validateFile.validateFile(file);
+            }
         } catch (Exception exception) {
             throw new RuntimeException("Uploading process image fail!");
         }
 
-        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-        Image image = new Image(fileName, file.getContentType(), file.getBytes(), LocalDateTime.now());
-        imageRepository.save(image);
-        return mapToDTO(image);
+        for(MultipartFile file : files) {
+            String fileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+            Image image = new Image(fileName, file.getContentType(), file.getBytes(), LocalDateTime.now());
+            imageRepository.save(image);
+            imageDTOList.add(mapToDTO(image));
+        }
+
+        return imageDTOList;
     }
 
     @Override

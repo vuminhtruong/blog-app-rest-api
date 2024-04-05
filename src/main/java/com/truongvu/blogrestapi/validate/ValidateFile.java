@@ -12,11 +12,13 @@ public class ValidateFile {
     public void validateFile(MultipartFile file) throws BadRequestException {
         String fileName = file.getOriginalFilename();
         if(fileName == null || fileName.isEmpty()) {
+            System.out.println("File name: " + fileName);
             throw new BadRequestException("File name is empty!");
         }
 
         String fileExtension = getFileExtension(fileName);
         if(!checkFileExtension(fileExtension)) {
+            System.out.println("File extension: " + fileExtension);
             throw new BadRequestException("File format is not correct!");
         }
     }
