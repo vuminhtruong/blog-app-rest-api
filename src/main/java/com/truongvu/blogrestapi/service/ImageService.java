@@ -11,4 +11,6 @@ public interface ImageService {
     ImageDTO getImage(long id);
     List<ImageDTO> uploadImage(MultipartFile[] file) throws IOException;
     String deleteImage(long id);
+
+    ImageDTO addImageForPost(long postId, ImageDTO imageDTO);
 }

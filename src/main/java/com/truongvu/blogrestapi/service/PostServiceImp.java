@@ -1,7 +1,11 @@
 package com.truongvu.blogrestapi.service;
 
+import com.truongvu.blogrestapi.dto.CommentDTO;
+import com.truongvu.blogrestapi.dto.ImageDTO;
 import com.truongvu.blogrestapi.dto.PostDTO;
 import com.truongvu.blogrestapi.entity.Category;
+import com.truongvu.blogrestapi.entity.Comment;
+import com.truongvu.blogrestapi.entity.Image;
 import com.truongvu.blogrestapi.entity.Post;
 import com.truongvu.blogrestapi.exception.ResourceNotFoundException;
 import com.truongvu.blogrestapi.repository.CategoryRepository;
@@ -14,10 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -81,7 +82,6 @@ public class PostServiceImp implements PostService {
     @Override
     public PostDTO findById(Long id) {
         Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
-
         return mapToDTO(post);
     }
 
@@ -114,11 +114,32 @@ public class PostServiceImp implements PostService {
     }
 
     private PostDTO mapToDTO(Post post) {
-        return modelMapper.map(post, PostDTO.class);
+        PostDTO postDTO = new PostDTO();
+        postDTO.setId(post.getId());
+        postDTO.setTitle(post.getTitle());
+        postDTO.setContent(post.getContent());
+        postDTO.setDescription(post.getDescription());
+        postDTO.setCategoryId(post.getCategory().getId());
+        postDTO.setComments(post.getComments().stream().map(this::convertComment).collect(Collectors.toSet()));
+        postDTO.setImageDTO(convertImage(post.getImage()));
+
+//        return modelMapper.map(post, PostDTO.class);
+        return postDTO;
     }
 
     private Post mapToEntity(PostDTO postDTO) {
-        return modelMapper.map(postDTO, Post.class);
+        Category category = categoryRepository.findById(postDTO.getCategoryId()).orElseThrow(() -> new ResourceNotFoundException("Category", "id", postDTO.getCategoryId()));
+
+        Post post = new Post();
+        post.setId(postDTO.getId());
+        post.setTitle(postDTO.getTitle());
+        post.setContent(postDTO.getContent());
+        post.setDescription(postDTO.getDescription());
+        post.setCategory(category);
+        post.setImage(covertImageDTO(postDTO.getImageDTO()));
+
+//        return modelMapper.map(postDTO, Post.class);
+        return post;
     }
 
     private <T> Collection<List<T>> partitionList(List<T> inputList, int pageSize) {
@@ -127,4 +148,41 @@ public class PostServiceImp implements PostService {
                 .collect(Collectors.groupingBy(value -> counter.getAndIncrement()/pageSize))
                 .values();
     }
+
+    private CommentDTO convertComment(Comment comment) {
+        CommentDTO commentDTO = new CommentDTO();
+        commentDTO.setId(comment.getId());
+        commentDTO.setName(comment.getName());
+        commentDTO.setEmail(comment.getEmail());
+        commentDTO.setBody(comment.getBody());
+
+        return commentDTO;
+    }
+
+    private ImageDTO convertImage(Image image) {
+        ImageDTO imageDTO = new ImageDTO();
+        if(image != null) {
+            imageDTO.setId(image.getId());
+            imageDTO.setName(image.getName());
+            imageDTO.setType(image.getType());
+            imageDTO.setData(Base64.getEncoder().encodeToString(image.getData()));
+            imageDTO.setCreateAt(image.getCreateAt());
+        }
+
+        return imageDTO;
+    }
+
+    private Image covertImageDTO(ImageDTO imageDTO) {
+        Image image = new Image();
+        if(imageDTO != null) {
+            image.setId(imageDTO.getId());
+            image.setName(imageDTO.getName());
+            image.setType(imageDTO.getType());
+            image.setData(Base64.getDecoder().decode(imageDTO.getData()));
+            image.setCreateAt(imageDTO.getCreateAt());
+        }
+
+        return image;
+    }
+
 }

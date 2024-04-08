@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,13 +34,21 @@ public class ImageController {
         return new ResponseEntity<>(imageService.getImage(id), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
     public ResponseEntity<List<ImageDTO>> uploadImage(@RequestParam("files") MultipartFile[] files) throws IOException {
         return new ResponseEntity<>(imageService.uploadImage(files), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteImage(@PathVariable(name = "id") long id) {
         return new ResponseEntity<>(imageService.deleteImage(id), HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/post/{postId}")
+    public ResponseEntity<ImageDTO> addImageForPost(@PathVariable(name = "postId") long postId,@RequestBody ImageDTO image) {
+        return new ResponseEntity<>(imageService.addImageForPost(postId, image), HttpStatus.CREATED);
     }
 }

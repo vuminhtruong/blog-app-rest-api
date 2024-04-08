@@ -2,8 +2,10 @@ package com.truongvu.blogrestapi.service;
 
 import com.truongvu.blogrestapi.dto.ImageDTO;
 import com.truongvu.blogrestapi.entity.Image;
+import com.truongvu.blogrestapi.entity.Post;
 import com.truongvu.blogrestapi.exception.ResourceNotFoundException;
 import com.truongvu.blogrestapi.repository.ImageRepository;
+import com.truongvu.blogrestapi.repository.PostRepository;
 import com.truongvu.blogrestapi.validate.ValidateFile;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ImageServiceImp implements ImageService {
+    private final PostRepository postRepository;
     private final ImageRepository imageRepository;
     private final ValidateFile validateFile;
     private final ModelMapper modelMapper;
@@ -62,6 +65,16 @@ public class ImageServiceImp implements ImageService {
         return "Deleted image with id=" + id;
     }
 
+    @Override
+    public ImageDTO addImageForPost(long postId, ImageDTO imageDTO) {
+        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post","id",postId));
+        Image image = mapToEntity(imageDTO);
+        post.setImage(image);
+
+        postRepository.save(post);
+        return mapToDTO(image);
+    }
+
     private ImageDTO mapToDTO(Image image) {
         ImageDTO imageDTO = new ImageDTO();
         imageDTO.setId(image.getId());
@@ -74,6 +87,13 @@ public class ImageServiceImp implements ImageService {
     }
 
     private Image mapToEntity(ImageDTO imageDTO) {
-        return modelMapper.map(imageDTO, Image.class);
+        Image image = new Image();
+        image.setId(imageDTO.getId());
+        image.setData(Base64.getDecoder().decode(imageDTO.getData()));
+        image.setName(imageDTO.getName());
+        image.setCreateAt(imageDTO.getCreateAt());
+        image.setType(imageDTO.getType());
+
+        return image;
     }
 }
