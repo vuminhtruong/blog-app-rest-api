@@ -23,10 +23,10 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
+    
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        // get JWT token from http request
         String token = getJwtFromRequest(request);
 
         if(StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
@@ -38,8 +38,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     null,
                     userDetails.getAuthorities()
             );
-
-            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         }

@@ -7,7 +7,6 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -25,7 +24,6 @@ public class JwtTokenProvider {
     @Value("${app.jwt-expiration-milliseconds}")
     private long jwtExpirationDate;
 
-    // generate JWT token
     public String generateToken(Authentication authentication) {
         String username = authentication.getName();
         Date expireDate = new Date(new Date().getTime() + jwtExpirationDate);
@@ -40,7 +38,6 @@ public class JwtTokenProvider {
         return token;
     }
 
-    // get username from JWT token
     public String getUsername(String token) {
         return Jwts.parser()
                 .verifyWith((SecretKey) key())

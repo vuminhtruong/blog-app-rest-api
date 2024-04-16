@@ -21,6 +21,6 @@ public class Category {
     @Column(name = "description",nullable = false)
     private String description;
 
-    @OneToMany(mappedBy = "category",cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "category",cascade = CascadeType.ALL)
     private List<Post> posts;
 }

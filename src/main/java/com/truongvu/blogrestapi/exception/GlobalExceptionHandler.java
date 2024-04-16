@@ -18,6 +18,12 @@ import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+    @ExceptionHandler
+    public ResponseEntity<ErrorDetail> handleQueryException(QueryException queryException, WebRequest webRequest) {
+        ErrorDetail errorDetail = new ErrorDetail(new Date(), queryException.getMessage(), webRequest.getDescription(false));
+        return new ResponseEntity<>(errorDetail, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetail> handleGlobalException(Exception exception, WebRequest webRequest) {
         ErrorDetail errorDetail = new ErrorDetail(new Date(),exception.getMessage(),webRequest.getDescription(false));

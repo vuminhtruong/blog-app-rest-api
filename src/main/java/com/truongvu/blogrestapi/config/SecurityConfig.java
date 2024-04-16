@@ -27,14 +27,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
-@SecurityScheme(
-        name = "Bearer Authentication",
-        type = SecuritySchemeType.HTTP,
-        bearerFormat = "JWT",
-        scheme = "bearer"
-)
 public class SecurityConfig {
-    private final UserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
     private final JwtAuthenticationFilter authenticationFilter;
 
@@ -53,8 +46,6 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests(
                 (authorize) -> authorize.requestMatchers(HttpMethod.GET, "/api/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/swagger-ui/**").permitAll()
-                        .requestMatchers("/v3/api-docs").permitAll()
                         .requestMatchers("/api/posts/{postId}/comments").permitAll()
                         .anyRequest().authenticated()
         ).exceptionHandling(exception -> exception
@@ -66,21 +57,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-//    @Bean
-//    public UserDetailsService userDetailsService() {
-//        UserDetails truong = User.builder()
-//                .username("truong")
-//                .password(passwordEncoder().encode("root"))
-//                .roles("USER")
-//                .build();
-//
-//        UserDetails admin = User.builder()
-//                .username("admin")
-//                .password(passwordEncoder().encode("admin"))
-//                .roles("ADMIN")
-//                .build();
-//
-//        return new InMemoryUserDetailsManager(truong,admin);
-//    }
 }

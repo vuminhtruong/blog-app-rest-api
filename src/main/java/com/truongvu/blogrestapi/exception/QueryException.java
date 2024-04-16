@@ -4,11 +4,11 @@ import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 @Getter
-public class BlogAPIException extends RuntimeException{
+public class QueryException extends RuntimeException{
     private final HttpStatus status;
     private final String message;
 
-    public BlogAPIException(HttpStatus status, String message) {
+    public QueryException(HttpStatus status, String message) {
         this.status = status;
         this.message = message;
     }
@@ -17,4 +17,5 @@ public class BlogAPIException extends RuntimeException{
     public String getMessage() {
         return message;
     }
+
 }
