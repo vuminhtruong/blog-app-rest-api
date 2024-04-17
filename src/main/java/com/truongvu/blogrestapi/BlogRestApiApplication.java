@@ -1,8 +1,8 @@
 package com.truongvu.blogrestapi;
 
-import com.truongvu.blogrestapi.repository.RoleRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,12 +12,14 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 @SpringBootApplication
 public class BlogRestApiApplication implements CommandLineRunner {
-	@Autowired
-	private RoleRepository roleRepository;
-
 	@Bean
 	public ModelMapper modelMapper() {
 		return new ModelMapper();
+	}
+
+	@Bean
+	public ObjectMapper objectMapper() {
+		return new ObjectMapper().registerModule(new JavaTimeModule());
 	}
 
 	public static void main(String[] args) {

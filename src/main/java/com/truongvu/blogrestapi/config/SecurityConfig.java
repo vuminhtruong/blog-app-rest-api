@@ -47,6 +47,7 @@ public class SecurityConfig {
                 (authorize) -> authorize.requestMatchers(HttpMethod.GET, "/api/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/posts/{postId}/comments").permitAll()
+                        .requestMatchers("/api/redis").permitAll()
                         .anyRequest().authenticated()
         ).exceptionHandling(exception -> exception
                 .authenticationEntryPoint(authenticationEntryPoint)

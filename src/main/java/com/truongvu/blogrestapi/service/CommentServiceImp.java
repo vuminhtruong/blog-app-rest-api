@@ -7,6 +7,7 @@ import com.truongvu.blogrestapi.exception.BlogAPIException;
 import com.truongvu.blogrestapi.exception.ResourceNotFoundException;
 import com.truongvu.blogrestapi.repository.CommentRepository;
 import com.truongvu.blogrestapi.repository.PostRepository;
+import com.truongvu.blogrestapi.service.redis.RedisService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -21,12 +22,14 @@ public class CommentServiceImp implements CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final ModelMapper modelMapper;
+    private final RedisService redisService;
 
     @Override
     public CommentDTO createComment(long postId, CommentDTO commentDTO) {
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post","id",postId));
         Comment comment = mapToEntity(commentDTO);
         comment.setPost(post);
+        redisService.delete("post" + postId);
 
         Comment savedComment = commentRepository.save(comment);
         return mapToDTO(savedComment);

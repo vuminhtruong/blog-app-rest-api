@@ -4,6 +4,7 @@ import com.truongvu.blogrestapi.dto.PostDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PostService {
     PostDTO createPost(PostDTO postDTO);
