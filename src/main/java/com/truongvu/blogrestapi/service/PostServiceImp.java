@@ -20,6 +20,7 @@ import com.truongvu.blogrestapi.repository.CategoryRepository;
 import com.truongvu.blogrestapi.repository.CommentRepository;
 import com.truongvu.blogrestapi.repository.PostRepository;
 import com.truongvu.blogrestapi.service.redis.RedisService;
+import com.truongvu.blogrestapi.utils.PostMapping;
 import com.truongvu.blogrestapi.validate.handler.ValidationHandler;
 import com.truongvu.blogrestapi.validate.post.ValidatePostCategory;
 import com.truongvu.blogrestapi.validate.post.ValidatePostImage;
@@ -27,6 +28,8 @@ import com.truongvu.blogrestapi.validate.post.ValidatePostLength;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.modelmapper.ModelMapper;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -48,6 +51,9 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static com.truongvu.blogrestapi.utils.PostMapping.mapToEntity;
+import static com.truongvu.blogrestapi.utils.PostMapping.mapToDTO;
+
 @Service
 @EnableCaching
 @RequiredArgsConstructor
@@ -57,7 +63,16 @@ public class PostServiceImp implements PostService {
     private final CategoryRepository categoryRepository;
     private final CommentRepository commentRepository;
     private final ObjectMapper objectMapper;
+    private final RabbitTemplate rabbitTemplate;
+
+    @Value("${spring.rabbitmq.exchange}")
+    private String exchange;
+
+    @Value("${spring.rabbitmq.routingkey}")
+    private String routingkey;
+
     private final ValidationHandler validationHandler = ValidationHandler.link(new ValidatePostLength(), new ValidatePostCategory(), new ValidatePostImage());
+
 
     @Transactional
     @Override
@@ -83,10 +98,10 @@ public class PostServiceImp implements PostService {
     public List<PostDTO> getAllPosts(int pageNo, int pageSize, String sortBy) {
         String key = "posts:page:" + pageNo + ":size:" + pageSize + ":sortBy:" + sortBy;
         String postByPagination = (String) redisService.get(key);
-        if(postByPagination == null) {
+        if (postByPagination == null) {
             Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by(sortBy));
             Page<Post> page = postRepository.findAll(pageable);
-            List<PostDTO> postDTOList = page.getContent().stream().map(this::mapToDTO).toList();
+            List<PostDTO> postDTOList = page.getContent().stream().map(PostMapping::mapToDTO).toList();
             try {
                 postByPagination = objectMapper.writeValueAsString(postDTOList);
                 redisService.set(key, postByPagination);
@@ -98,7 +113,8 @@ public class PostServiceImp implements PostService {
         }
 
         try {
-            return objectMapper.readValue(postByPagination, new TypeReference<List<PostDTO>>() {});
+            return objectMapper.readValue(postByPagination, new TypeReference<List<PostDTO>>() {
+            });
         } catch (JsonProcessingException e) {
             throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value postPagination in Redis");
         }
@@ -108,8 +124,9 @@ public class PostServiceImp implements PostService {
     @Override
     public List<PostDTO> getAllPostsWithoutPageSize() {
         String postsList_string = (String) redisService.get("posts");
+
         if (postsList_string == null) {
-            List<PostDTO> postsDTO = postRepository.findAllPost().stream().map(this::mapToDTO).toList();
+            List<PostDTO> postsDTO = postRepository.findAllPost().stream().map(PostMapping::mapToDTO).toList();
             try {
                 postsList_string = objectMapper.writeValueAsString(postsDTO);
                 redisService.set("posts", postsList_string);
@@ -117,15 +134,16 @@ public class PostServiceImp implements PostService {
             } catch (JsonProcessingException exception) {
                 throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while setting value posts in Redis");
             }
+
             return postsDTO;
         }
 
         try {
-            return objectMapper.readValue(postsList_string, new TypeReference<List<PostDTO>>() {});
+            return objectMapper.readValue(postsList_string, new TypeReference<List<PostDTO>>() {
+            });
         } catch (JsonProcessingException e) {
             throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value posts in Redis");
         }
-
     }
 
     @Override
@@ -143,7 +161,7 @@ public class PostServiceImp implements PostService {
             listPost.sort(Comparator.comparing(Post::getContent));
         }
 
-        return listPost.stream().map(this::mapToDTO).collect(Collectors.toList());
+        return listPost.stream().map(PostMapping::mapToDTO).collect(Collectors.toList());
     }
 
     @Override
@@ -206,8 +224,8 @@ public class PostServiceImp implements PostService {
     public List<PostDTO> getPostsByCategory(long categoryId) {
         String post_category = (String) redisService.get("postByCategory" + categoryId);
 
-        if(post_category == null) {
-            List<PostDTO> postsDTO = postRepository.findByCategoryId(categoryId).stream().map(this::mapToDTO).toList();
+        if (post_category == null) {
+            List<PostDTO> postsDTO = postRepository.findByCategoryId(categoryId).stream().map(PostMapping::mapToDTO).toList();
             try {
                 post_category = objectMapper.writeValueAsString(postsDTO);
                 redisService.set("postByCategory" + categoryId, post_category);
@@ -219,39 +237,12 @@ public class PostServiceImp implements PostService {
         }
 
         try {
-            return objectMapper.readValue(post_category, new TypeReference<List<PostDTO>>() {});
+            return objectMapper.readValue(post_category, new TypeReference<List<PostDTO>>() {
+            });
         } catch (JsonProcessingException e) {
             throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value posts in Redis");
         }
 
-    }
-
-    private PostDTO mapToDTO(Post post) {
-        PostDTO postDTO = new PostDTO();
-        postDTO.setId(post.getId());
-        postDTO.setTitle(post.getTitle());
-        postDTO.setContent(post.getContent());
-        postDTO.setDescription(post.getDescription());
-        postDTO.setCategoryId(post.getCategory().getId());
-        if (post.getComments() != null) {
-            postDTO.setComments(post.getComments().stream().map(this::convertComment).collect(Collectors.toSet()));
-        }
-        postDTO.setImageDTO(convertImage(post.getImage()));
-
-//        return modelMapper.map(post, PostDTO.class);
-        return postDTO;
-    }
-
-    private Post mapToEntity(PostDTO postDTO) {
-        Post post = new Post();
-        post.setId(postDTO.getId());
-        post.setTitle(postDTO.getTitle());
-        post.setContent(postDTO.getContent());
-        post.setDescription(postDTO.getDescription());
-//        post.setImage(covertImageDTO(postDTO.getImageDTO()));
-
-//        return modelMapper.map(postDTO, Post.class);
-        return post;
     }
 
     private <T> Collection<List<T>> partitionList(List<T> inputList, int pageSize) {
@@ -259,42 +250,6 @@ public class PostServiceImp implements PostService {
         return inputList.stream()
                 .collect(Collectors.groupingBy(value -> counter.getAndIncrement() / pageSize))
                 .values();
-    }
-
-    private CommentDTO convertComment(Comment comment) {
-        CommentDTO commentDTO = new CommentDTO();
-        commentDTO.setId(comment.getId());
-        commentDTO.setName(comment.getName());
-        commentDTO.setEmail(comment.getEmail());
-        commentDTO.setBody(comment.getBody());
-
-        return commentDTO;
-    }
-
-    private ImageDTO convertImage(Image image) {
-        ImageDTO imageDTO = new ImageDTO();
-        if (image != null) {
-            imageDTO.setId(image.getId());
-            imageDTO.setName(image.getName());
-            imageDTO.setType(image.getType());
-            imageDTO.setData(Base64.getEncoder().encodeToString(image.getData()));
-            imageDTO.setCreateAt(image.getCreateAt());
-        }
-
-        return imageDTO;
-    }
-
-    private Image covertImageDTO(ImageDTO imageDTO) {
-        Image image = new Image();
-        if (imageDTO != null) {
-            image.setId(imageDTO.getId());
-            image.setName(imageDTO.getName());
-            image.setType(imageDTO.getType());
-            image.setData(Base64.getDecoder().decode(imageDTO.getData()));
-            image.setCreateAt(imageDTO.getCreateAt());
-        }
-
-        return image;
     }
 
 }

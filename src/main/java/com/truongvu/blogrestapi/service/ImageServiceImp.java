@@ -59,11 +59,29 @@ public class ImageServiceImp implements ImageService {
 
     @Override
     public ImageDTO getImage(long id) {
-        return mapToDTO(imageRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Image", "id", id)));
+        String imageId_string = (String) redisService.get("image" + id);
+        if(imageId_string == null) {
+            ImageDTO imageDTO = mapToDTO(imageRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Image", "id", id)));
+            try {
+                imageId_string = objectMapper.writeValueAsString(imageDTO);
+                redisService.set("image" + id, imageId_string);
+                redisService.setTimeToLive("image" + id, 2);
+            } catch (Exception exception) {
+                throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while setting value imageId in Redis");
+            }
+            return imageDTO;
+        }
+
+        try {
+            return objectMapper.readValue(imageId_string, ImageDTO.class);
+        } catch (JsonProcessingException e) {
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value images in Redis");
+        }
     }
 
     @Override
     public List<ImageDTO> uploadImage(MultipartFile[] files) throws IOException {
+        redisService.delete("images");
         List<ImageDTO> imageDTOList = new ArrayList<>();
         try {
             for (MultipartFile file : files) {
