@@ -19,7 +19,7 @@ import com.truongvu.blogrestapi.exception.ResourceNotFoundException;
 import com.truongvu.blogrestapi.repository.CategoryRepository;
 import com.truongvu.blogrestapi.repository.CommentRepository;
 import com.truongvu.blogrestapi.repository.PostRepository;
-import com.truongvu.blogrestapi.service.redis.RedisService;
+//import com.truongvu.blogrestapi.service.redis.RedisService;
 import com.truongvu.blogrestapi.utils.PostMapping;
 import com.truongvu.blogrestapi.validate.handler.ValidationHandler;
 import com.truongvu.blogrestapi.validate.post.ValidatePostCategory;
@@ -30,10 +30,7 @@ import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.modelmapper.ModelMapper;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.annotation.*;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -58,24 +55,19 @@ import static com.truongvu.blogrestapi.utils.PostMapping.mapToDTO;
 @EnableCaching
 @RequiredArgsConstructor
 public class PostServiceImp implements PostService {
-    private final RedisService redisService;
+    //    private final RedisService redisService;
     private final PostRepository postRepository;
     private final CategoryRepository categoryRepository;
     private final CommentRepository commentRepository;
-    private final ObjectMapper objectMapper;
-    private final RabbitTemplate rabbitTemplate;
+//    private final ObjectMapper objectMapper;
 
-    @Value("${spring.rabbitmq.exchange}")
-    private String exchange;
-
-    @Value("${spring.rabbitmq.routingkey}")
-    private String routingkey;
 
     private final ValidationHandler validationHandler = ValidationHandler.link(new ValidatePostLength(), new ValidatePostCategory(), new ValidatePostImage());
 
 
     @Transactional
     @Override
+    @CacheEvict(value = "posts", allEntries = true, beforeInvocation = true)
     public PostDTO createPost(PostDTO postDTO) {
         Category category;
         try {
@@ -95,58 +87,67 @@ public class PostServiceImp implements PostService {
     }
 
     @Override
+    @Cacheable(value = "posts", key = "#pageNo + '::' + #pageSize + '::' + #sortBy")
     public List<PostDTO> getAllPosts(int pageNo, int pageSize, String sortBy) {
-        String key = "posts:page:" + pageNo + ":size:" + pageSize + ":sortBy:" + sortBy;
-        String postByPagination = (String) redisService.get(key);
-        if (postByPagination == null) {
-            Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by(sortBy));
-            Page<Post> page = postRepository.findAll(pageable);
-            List<PostDTO> postDTOList = page.getContent().stream().map(PostMapping::mapToDTO).toList();
-            try {
-                postByPagination = objectMapper.writeValueAsString(postDTOList);
-                redisService.set(key, postByPagination);
-                redisService.setTimeToLive(key, 5);
-            } catch (JsonProcessingException exception) {
-                throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while setting value postPagination in Redis");
-            }
-            return postDTOList;
-        }
-
-        try {
-            return objectMapper.readValue(postByPagination, new TypeReference<List<PostDTO>>() {
-            });
-        } catch (JsonProcessingException e) {
-            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value postPagination in Redis");
-        }
+        System.out.println("All Posts Pagination Database: ");
+        Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by(sortBy));
+        Page<Post> page = postRepository.findAll(pageable);
+        return page.getContent().stream().map(PostMapping::mapToDTO).collect(Collectors.toList());
+//        String key = "posts:page:" + pageNo + ":size:" + pageSize + ":sortBy:" + sortBy;
+//        String postByPagination = (String) redisService.get(key);
+//        if (postByPagination == null) {
+//            Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by(sortBy));
+//            Page<Post> page = postRepository.findAll(pageable);
+//            List<PostDTO> postDTOList = page.getContent().stream().map(PostMapping::mapToDTO).toList();
+//            try {
+//                postByPagination = objectMapper.writeValueAsString(postDTOList);
+//                redisService.set(key, postByPagination);
+//                redisService.setTimeToLive(key, 5);
+//            } catch (JsonProcessingException exception) {
+//                throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while setting value postPagination in Redis");
+//            }
+//            return postDTOList;
+//        }
+//
+//        try {
+//            return objectMapper.readValue(postByPagination, new TypeReference<List<PostDTO>>() {
+//            });
+//        } catch (JsonProcessingException e) {
+//            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value postPagination in Redis");
+//        }
     }
 
 
+    @Cacheable("posts")
     @Override
     public List<PostDTO> getAllPostsWithoutPageSize() {
-        String postsList_string = (String) redisService.get("posts");
-
-        if (postsList_string == null) {
-            List<PostDTO> postsDTO = postRepository.findAllPost().stream().map(PostMapping::mapToDTO).toList();
-            try {
-                postsList_string = objectMapper.writeValueAsString(postsDTO);
-                redisService.set("posts", postsList_string);
-                redisService.setTimeToLive("posts", 1);
-            } catch (JsonProcessingException exception) {
-                throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while setting value posts in Redis");
-            }
-
-            return postsDTO;
-        }
-
-        try {
-            return objectMapper.readValue(postsList_string, new TypeReference<List<PostDTO>>() {
-            });
-        } catch (JsonProcessingException e) {
-            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value posts in Redis");
-        }
+        System.out.println("All Post - Database: ");
+        return postRepository.findAllPost().stream().map(PostMapping::mapToDTO).collect(Collectors.toList());
+//        String postsList_string = (String) redisService.get("posts");
+//
+//        if (postsList_string == null) {
+//            List<PostDTO> postsDTO = postRepository.findAllPost().stream().map(PostMapping::mapToDTO).toList();
+//            try {
+//                postsList_string = objectMapper.writeValueAsString(postsDTO);
+//                redisService.set("posts", postsList_string);
+//                redisService.setTimeToLive("posts", 1);
+//            } catch (JsonProcessingException exception) {
+//                throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while setting value posts in Redis");
+//            }
+//
+//            return postsDTO;
+//        }
+//
+//        try {
+//            return objectMapper.readValue(postsList_string, new TypeReference<List<PostDTO>>() {
+//            });
+//        } catch (JsonProcessingException e) {
+//            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value posts in Redis");
+//        }
     }
 
     @Override
+    @Cacheable(value = "posts", key = "#categoryId + '::' + #pageNo + '::' + #pageSize + '::' + #sortBy")
     public List<PostDTO> getPostsByCategoryWithPageSize(long categoryId, int pageNo, int pageSize, String sortBy) {
         List<Post> posts = postRepository.findByCategoryId(categoryId);
 
@@ -164,84 +165,102 @@ public class PostServiceImp implements PostService {
         return listPost.stream().map(PostMapping::mapToDTO).collect(Collectors.toList());
     }
 
+    @Cacheable(value = "post", key = "#id")
     @Override
     public PostDTO findById(Long id) {
-        String postDTO_string = (String) redisService.get("post" + id);
-        if (postDTO_string == null) {
-            Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
-            PostDTO postDTO = mapToDTO(post);
-            try {
-                postDTO_string = objectMapper.writeValueAsString(postDTO);
-                redisService.set("post" + id, postDTO_string);
-                redisService.setTimeToLive("post" + id, 5);
-            } catch (JsonProcessingException exception) {
-                throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while setting value postId in Redis");
-            }
-            return postDTO;
-        }
-
-        try {
-            return objectMapper.readValue(postDTO_string, PostDTO.class);
-        } catch (Exception exception) {
-            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value postId in Redis");
-        }
+        System.out.println("Database");
+        return mapToDTO(postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id)));
+//        String postDTO_string = (String) redisService.get("post" + id);
+//        if (postDTO_string == null) {
+//            Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
+//            PostDTO postDTO = mapToDTO(post);
+//            try {
+//                postDTO_string = objectMapper.writeValueAsString(postDTO);
+//                redisService.set("post" + id, postDTO_string);
+//                redisService.setTimeToLive("post" + id, 5);
+//            } catch (JsonProcessingException exception) {
+//                throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while setting value postId in Redis");
+//            }
+//            return postDTO;
+//        }
+//
+//        try {
+//            return objectMapper.readValue(postDTO_string, PostDTO.class);
+//        } catch (Exception exception) {
+//            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value postId in Redis");
+//        }
     }
 
     @Transactional
     @Override
+    @Caching(
+            evict = {@CacheEvict(value = "posts", allEntries = true)},
+            put = {@CachePut(value = "post", key = "#postId")}
+    )
     public PostDTO updatePost(PostDTO newPostDTO, long postId) {
-        redisService.delete("post" + postId);
-
-        try {
-            postRepository.updatePost(postId, newPostDTO.getTitle(), newPostDTO.getDescription(), newPostDTO.getContent());
-        } catch (Exception exception) {
-            throw new QueryException(HttpStatus.BAD_REQUEST, "No change for this post");
-        }
-
+        postRepository.updatePost(postId, newPostDTO.getTitle(), newPostDTO.getDescription(), newPostDTO.getContent());
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
-        PostDTO postDTO = mapToDTO(post);
-
-        try {
-            String postDTO_string = objectMapper.writeValueAsString(postDTO);
-            redisService.set("post" + postId, postDTO_string);
-            redisService.setTimeToLive("post" + postId, 1);
-        } catch (JsonProcessingException exception) {
-            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while updating value postId in Redis");
-        }
-
-        return newPostDTO;
+        return mapToDTO(post);
+//        redisService.delete("post" + postId);
+//
+//        try {
+//            postRepository.updatePost(postId, newPostDTO.getTitle(), newPostDTO.getDescription(), newPostDTO.getContent());
+//        } catch (Exception exception) {
+//            throw new QueryException(HttpStatus.BAD_REQUEST, "No change for this post");
+//        }
+//
+//        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+//        PostDTO postDTO = mapToDTO(post);
+//
+//        try {
+//            String postDTO_string = objectMapper.writeValueAsString(postDTO);
+//            redisService.set("post" + postId, postDTO_string);
+//            redisService.setTimeToLive("post" + postId, 1);
+//        } catch (JsonProcessingException exception) {
+//            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while updating value postId in Redis");
+//        }
+//
+//        return newPostDTO;
     }
 
     @Transactional
     @Override
+    @Caching(
+            evict = {
+                    @CacheEvict(value = "posts", allEntries = true, beforeInvocation = true),
+                    @CacheEvict(value = "post", key = "#id")
+            }
+    )
     public void deletePost(Long id) {
         commentRepository.deleteCommentsByPostId(id);
         postRepository.deletePost(id);
-        redisService.delete("post" + id);
+//        redisService.delete("post" + id);
     }
 
     @Override
+    @Cacheable(value = "posts", key = "'category' + #categoryId")
     public List<PostDTO> getPostsByCategory(long categoryId) {
-        String post_category = (String) redisService.get("postByCategory" + categoryId);
-
-        if (post_category == null) {
-            List<PostDTO> postsDTO = postRepository.findByCategoryId(categoryId).stream().map(PostMapping::mapToDTO).toList();
-            try {
-                post_category = objectMapper.writeValueAsString(postsDTO);
-                redisService.set("postByCategory" + categoryId, post_category);
-                redisService.setTimeToLive("postByCategory" + categoryId, 5);
-            } catch (JsonProcessingException exception) {
-                throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while setting value postByCategoryId in Redis");
-            }
-            return postsDTO;
-        }
-
-        try {
-            return objectMapper.readValue(post_category, new TypeReference<List<PostDTO>>() {
-            });
-        } catch (JsonProcessingException e) {
-            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value posts in Redis");
-        }
+        return postRepository.findByCategoryId(categoryId).stream().map(PostMapping::mapToDTO).toList();
+//        String post_category = (String) redisService.get("postByCategory" + categoryId);
+//
+//        if (post_category == null) {
+//            List<PostDTO> postsDTO = postRepository.findByCategoryId(categoryId).stream().map(PostMapping::mapToDTO).toList();
+//            try {
+//                post_category = objectMapper.writeValueAsString(postsDTO);
+//                redisService.set("postByCategory" + categoryId, post_category);
+//                redisService.setTimeToLive("postByCategory" + categoryId, 5);
+//            } catch (JsonProcessingException exception) {
+//                throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while setting value postByCategoryId in Redis");
+//            }
+//            return postsDTO;
+//        }
+//
+//        try {
+//            return objectMapper.readValue(post_category, new TypeReference<List<PostDTO>>() {
+//            });
+//        } catch (JsonProcessingException e) {
+//            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Error while reading value posts in Redis");
+//        }
 
     }
 
@@ -251,5 +270,4 @@ public class PostServiceImp implements PostService {
                 .collect(Collectors.groupingBy(value -> counter.getAndIncrement() / pageSize))
                 .values();
     }
-
 }

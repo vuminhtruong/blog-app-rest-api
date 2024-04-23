@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -24,6 +26,13 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:4200")
 public class PostController {
     private final PostService postService;
+    private final RabbitTemplate rabbitTemplate;
+
+    @Value("${spring.rabbitmq.exchange}")
+    String exchange;
+
+    @Value("${spring.rabbitmq.routingkey}")
+    String routingKey;
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping

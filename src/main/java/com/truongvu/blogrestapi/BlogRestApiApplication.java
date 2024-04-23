@@ -6,11 +6,13 @@ import org.modelmapper.ModelMapper;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @EnableTransactionManagement
 @SpringBootApplication
+@EnableCaching
 public class BlogRestApiApplication implements CommandLineRunner {
 	@Bean
 	public ModelMapper modelMapper() {

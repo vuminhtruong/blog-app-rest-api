@@ -33,6 +33,7 @@ public class PostMapping {
         post.setTitle(postDTO.getTitle());
         post.setContent(postDTO.getContent());
         post.setDescription(postDTO.getDescription());
+
 //        post.setImage(covertImageDTO(postDTO.getImageDTO()));
 
 //        return modelMapper.map(postDTO, Post.class);
