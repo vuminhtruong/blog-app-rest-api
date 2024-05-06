@@ -17,6 +17,15 @@
         <java.version>17</java.version>
     </properties>
     <dependencies>
+
+        <!-- https://mvnrepository.com/artifact/org.redisson/redisson-hibernate-53 -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-hibernate-53</artifactId>
+            <version>3.29.0</version>
+        </dependency>
+
+
         <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>

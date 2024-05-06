@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @EnableTransactionManagement
 @SpringBootApplication
-@EnableCaching
+//@EnableCaching
 public class BlogRestApiApplication implements CommandLineRunner {
 	@Bean
 	public ModelMapper modelMapper() {

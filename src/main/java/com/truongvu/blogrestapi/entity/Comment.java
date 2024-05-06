@@ -4,12 +4,14 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "comment")
+@org.hibernate.annotations.Cache(region = "commentCache", usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

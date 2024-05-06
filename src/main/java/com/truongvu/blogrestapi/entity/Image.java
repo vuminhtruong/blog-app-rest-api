@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,6 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Entity
 @Table(name = "image")
+@Cache(region = "imageCache", usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Image {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

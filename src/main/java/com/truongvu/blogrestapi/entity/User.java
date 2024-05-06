@@ -1,6 +1,7 @@
 package com.truongvu.blogrestapi.entity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import java.util.Set;
 
@@ -10,6 +11,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Entity
 @Table(name = "users")
+@org.hibernate.annotations.Cache(region = "userCache", usage = CacheConcurrencyStrategy.READ_ONLY)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -3,6 +3,8 @@ package com.truongvu.blogrestapi.entity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.annotations.Cache;
 import org.hibernate.engine.internal.Cascade;
 
 import java.io.Serializable;
@@ -14,6 +16,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Entity
 @Table(name = "post", uniqueConstraints = @UniqueConstraint(columnNames = "title"))
+@Cache(region = "postCache", usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Post implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,7 +31,9 @@ public class Post implements Serializable {
     @Column(name = "content",nullable = false)
     private String content;
 
-    @OneToMany(mappedBy = "post")
+    @OneToMany(mappedBy = "post", fetch = FetchType.EAGER)
+//    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "commentCache")
     private Set<Comment> comments;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -36,6 +41,7 @@ public class Post implements Serializable {
     private Category category;
 
     @OneToOne(cascade = CascadeType.ALL)
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "imageCache")
     @JoinColumn(name = "image_id")
     private Image image;
 }

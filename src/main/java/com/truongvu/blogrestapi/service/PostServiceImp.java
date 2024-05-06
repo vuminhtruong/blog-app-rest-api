@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.truongvu.blogrestapi.controller.PostController;
 import com.truongvu.blogrestapi.dto.CommentDTO;
 import com.truongvu.blogrestapi.dto.ImageDTO;
 import com.truongvu.blogrestapi.dto.PostDTO;
@@ -28,6 +29,8 @@ import com.truongvu.blogrestapi.validate.post.ValidatePostLength;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.*;
@@ -52,7 +55,7 @@ import static com.truongvu.blogrestapi.utils.PostMapping.mapToEntity;
 import static com.truongvu.blogrestapi.utils.PostMapping.mapToDTO;
 
 @Service
-@EnableCaching
+//@EnableCaching
 @RequiredArgsConstructor
 public class PostServiceImp implements PostService {
     //    private final RedisService redisService;
@@ -61,13 +64,15 @@ public class PostServiceImp implements PostService {
     private final CommentRepository commentRepository;
 //    private final ObjectMapper objectMapper;
 
+    private static final Logger logger = LoggerFactory.getLogger(PostService.class);
+
 
     private final ValidationHandler validationHandler = ValidationHandler.link(new ValidatePostLength(), new ValidatePostCategory(), new ValidatePostImage());
 
 
     @Transactional
     @Override
-    @CacheEvict(value = "posts", allEntries = true, beforeInvocation = true)
+//    @CacheEvict(value = "posts", allEntries = true)
     public PostDTO createPost(PostDTO postDTO) {
         Category category;
         try {
@@ -87,9 +92,9 @@ public class PostServiceImp implements PostService {
     }
 
     @Override
-    @Cacheable(value = "posts", key = "#pageNo + '::' + #pageSize + '::' + #sortBy")
+//    @Cacheable(value = "posts", key = "#pageNo + '::' + #pageSize + '::' + #sortBy")
     public List<PostDTO> getAllPosts(int pageNo, int pageSize, String sortBy) {
-        System.out.println("All Posts Pagination Database: ");
+//        System.out.println("All Posts Pagination Database: ");
         Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by(sortBy));
         Page<Post> page = postRepository.findAll(pageable);
         return page.getContent().stream().map(PostMapping::mapToDTO).collect(Collectors.toList());
@@ -118,11 +123,10 @@ public class PostServiceImp implements PostService {
     }
 
 
-    @Cacheable("posts")
+//    @Cacheable("posts")
     @Override
     public List<PostDTO> getAllPostsWithoutPageSize() {
-        System.out.println("All Post - Database: ");
-        return postRepository.findAllPost().stream().map(PostMapping::mapToDTO).collect(Collectors.toList());
+        return postRepository.findAll().stream().map(PostMapping::mapToDTO).collect(Collectors.toList());
 //        String postsList_string = (String) redisService.get("posts");
 //
 //        if (postsList_string == null) {
@@ -147,7 +151,7 @@ public class PostServiceImp implements PostService {
     }
 
     @Override
-    @Cacheable(value = "posts", key = "#categoryId + '::' + #pageNo + '::' + #pageSize + '::' + #sortBy")
+//    @Cacheable(value = "posts", key = "#categoryId + '::' + #pageNo + '::' + #pageSize + '::' + #sortBy")
     public List<PostDTO> getPostsByCategoryWithPageSize(long categoryId, int pageNo, int pageSize, String sortBy) {
         List<Post> posts = postRepository.findByCategoryId(categoryId);
 
@@ -165,10 +169,10 @@ public class PostServiceImp implements PostService {
         return listPost.stream().map(PostMapping::mapToDTO).collect(Collectors.toList());
     }
 
-    @Cacheable(value = "post", key = "#id")
+//    @Cacheable(value = "post", key = "#id")
     @Override
     public PostDTO findById(Long id) {
-        System.out.println("Database");
+//        System.out.println("Database");
         return mapToDTO(postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id)));
 //        String postDTO_string = (String) redisService.get("post" + id);
 //        if (postDTO_string == null) {
@@ -193,10 +197,10 @@ public class PostServiceImp implements PostService {
 
     @Transactional
     @Override
-    @Caching(
-            evict = {@CacheEvict(value = "posts", allEntries = true)},
-            put = {@CachePut(value = "post", key = "#postId")}
-    )
+//    @Caching(
+//            evict = {@CacheEvict(value = "posts", allEntries = true)},
+//            put = {@CachePut(value = "post", key = "#postId")}
+//    )
     public PostDTO updatePost(PostDTO newPostDTO, long postId) {
         postRepository.updatePost(postId, newPostDTO.getTitle(), newPostDTO.getDescription(), newPostDTO.getContent());
         Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
@@ -225,20 +229,21 @@ public class PostServiceImp implements PostService {
 
     @Transactional
     @Override
-    @Caching(
-            evict = {
-                    @CacheEvict(value = "posts", allEntries = true, beforeInvocation = true),
-                    @CacheEvict(value = "post", key = "#id")
-            }
-    )
+//    @Caching(
+//            evict = {
+//                    @CacheEvict(value = "posts", allEntries = true),
+//                    @CacheEvict(value = "post", key = "#id")
+//            }
+//    )
     public void deletePost(Long id) {
         commentRepository.deleteCommentsByPostId(id);
-        postRepository.deletePost(id);
+        postRepository.deleteById(id);
+//        postRepository.deletePost(id);
 //        redisService.delete("post" + id);
     }
 
     @Override
-    @Cacheable(value = "posts", key = "'category' + #categoryId")
+//    @Cacheable(value = "posts", key = "'category' + #categoryId")
     public List<PostDTO> getPostsByCategory(long categoryId) {
         return postRepository.findByCategoryId(categoryId).stream().map(PostMapping::mapToDTO).toList();
 //        String post_category = (String) redisService.get("postByCategory" + categoryId);
